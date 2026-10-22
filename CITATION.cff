@@ -11,7 +11,7 @@ authors:
 version: 2.0.0
 date-released: 2026-10-22
 license: MIT
-repository-code: "https://github.com/wwz171/gg-pa-released"
+repository-code: "https://github.com/weizhouwangw/gg-pa"
 preferred-citation:
   type: conference-paper
   title: "Composing Diffusion Priors with Explicit Physical Context via Generative Gibbs Sampling"
