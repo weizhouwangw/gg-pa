@@ -1,137 +1,138 @@
 # GG-PA: Generative Gibbs for Physics-Aware Sampling
 
-This repository contains the reference research code for **GG-PA**.
+This repository contains the companion package for
 
-GG-PA is a training-free generative Gibbs framework for composing pretrained diffusion priors with explicit physical context in an augmented state space. The codebase is organized as a research prototype: the package under `src/ggpa` contains the reusable implementation, while the root `notebooks/` directory provides quick runs that reproduce small paper-facing demonstrations with bundled checkpoints.
+> **Composing Diffusion Priors with Explicit Physical Context via Generative Gibbs Sampling**
+>
+> Weizhou Wang, Jonathan Weare and Aaron R. Dinner · NeurIPS 2026
+>
+> [Read the paper](https://arxiv.org/abs/2605.10642)
 
-## What Is Included
+![GG-PA couples component priors to projections of a shared system with explicit physical context](assets/overview.png)
 
-- `notebooks/`: quick-run notebooks intended for direct use
-- `checkpoints/`: pretrained model weights used by the released notebooks
-- `data/`: packaged topologies and compact processed references used by the alanine examples
-- `src/ggpa/`: package code for kernels, clients, server components, and system-specific samplers
-- `configs/`: lightweight configuration files
-- `examples/`: larger end-to-end scripts that generate raw data and paper-facing figures
+**Figure 1. GG-PA composition.** Component priors act on projections of a shared system; the physical context also governs degrees of freedom outside the priors. Blue arrows show parallel denoising, and dashed amber arrows show context-aware aggregation. The two updates form a Gibbs sweep.
 
-The exploratory folders used during development are not part of the intended public surface of the project.
+GG-PA is an **inference-time composition framework** that combines pretrained diffusion priors with explicit physical context to sample a joint system without retraining. It supports three settings:
 
-Within `src/ggpa`, the maintained reusable system modules are currently `phi4` and `alanine_dipeptide`. The double-well code is kept to support the released quick-run notebook.
+- **Unbiased sampling for linear inverse problems.** For Gaussian observation noise, GG-PA corrects the likelihood covariance to remove split Gibbs bias at finite split noise.
+
+- **Unbiased composition through quadratic interactions.** GG-PA accounts for diffusion noise in the interaction, recovering the desired joint distribution at finite diffusion time.
+
+- **Composition with general physical environments.** Combine learned component priors with explicit interactions, including nonquadratic molecular forces.
+
+The repository includes three pretrained checkpoints, two CPU quickstarts with analytic references, $\phi^4$ lattice and alanine examples, and configurations for the paper applications.
+
+## Quick start
+
+The quickstarts demonstrate unbiased linear inverse sampling and composition of a learned double-well prior with a quadratic environment. With **PyTorch, NumPy, SciPy, Matplotlib and PyYAML** available, run from the checkout:
+
+```bash
+bash quickstart.sh
+```
+
+No installation is needed. Both run on CPU in about five minutes and save results to `runs/quickstart_<timestamp>/`; settings are in the [quickstart guide](quickstart/README.md).
+
+### 1. Solve a linear inverse problem without split bias
+
+For $y=Hx+\eta$ with Gaussian noise covariance $\Sigma_\eta$, split Gibbs with split noise $\rho$ inflates the observation covariance to $\Sigma_\eta+\rho^2HH^T$ and **samples the wrong posterior, even after convergence**.
+
+GG-PA supplies the correction:
+
+$$
+\Sigma_{\mathrm{split}}=\Sigma_\eta-\rho^2HH^T
+$$
+
+with admissible noise $0<\rho<\rho_{\max}$, where
+
+$$
+\rho_{\max}=\left[\lambda_{\max}\!\left(\Sigma_\eta^{-1/2}HH^T\Sigma_\eta^{-1/2}\right)\right]^{-1/2}.
+$$
+
+In this range the corrected covariance is positive definite and the posterior is exact; larger $\rho$ mixes faster without bias.
+
+![Inverse-problem quickstart: prior, observation, exact posterior and split Gibbs samples](assets/figures/inverse_problem.png)
+
+**Figure 2. Linear inverse problem.** Top: prior, observation likelihood and exact posterior. Bottom: GG-PA, uncorrected split Gibbs and their marginals along the observed coordinate. GG-PA follows the target; uncorrected splitting puts excess mass in the outer columns. Red shading marks its persistent target bias.
+
+### 2. Couple a pretrained diffusion model to an environment
+
+A diffusion model trained on an isolated, symmetric double well (Figure 3a) is coupled to a harmonic environment that favors the right well. GG-PA recovers the shifted distribution without retraining, using the same finite-noise correction as the inverse problem; direct diffusion still samples the isolated system. GG-PA-RE adds replica exchange over diffusion time.
+
+![Double-well quickstart: training potential, coupled energy surface and clean-coordinate marginal](assets/figures/doublewell.png)
+
+**Figure 3. Double well in a harmonic environment.** (a) Isolated training potential. (b) Coupled potential energy surface. (c) Distributions along $x$ from direct diffusion, GG-PA and GG-PA-RE, compared with the exact physical marginal (dashed).
+
+### How composition works
+
+GG-PA keeps a full-system state alongside one sample per component prior; projections select the coordinates each prior models. Each Gibbs sweep has two updates (Figure 1):
+
+1. **Parallel denoising.** Each prior treats its projected coordinates as a noisy observation and samples a clean configuration; the priors update independently.
+
+2. **Context-aware aggregation.** The full system is updated under the physical context and the couplings to those samples.
+
+Everything is built with `compose(priors, context, ...)`; the [manual](docs/manual.md) describes the API.
 
 ## Installation
 
-From the repository root:
+Install from the repository root:
 
 ```bash
-python -m pip install -e .
+python -m pip install ".[md,figures]"
 ```
 
-This installs the dependency set used by the released notebooks and examples.
+## Examples and manual
 
-If you prefer conda, use:
+The examples use the supplied checkpoints and YAML settings; run them from the repository root.
+
+### $\phi^4$ lattice
+
+A single-site double-well prior is reused across a $16\times16$ lattice. Changing the nearest-neighbor coupling produces disorder, near-transition fluctuations and ordering without retraining.
+
+![Lattice fields and magnetization distributions at three couplings](assets/figures/phi4.png)
+
+**Figure 4. $\phi^4$ lattice.** Top: sampled fields at increasing coupling $J$. Bottom: absolute magnetization distributions from GG-PA and Metropolis at the same settings.
 
 ```bash
-conda env create -f environment.yml
-conda activate ggpa
+python examples/phi4/example_phi4.py --config examples/phi4/settings.yaml
 ```
 
-If you need a specific CUDA-enabled PyTorch build, install `torch` using the official PyTorch selector for your platform.
+Allow about 15 minutes. See the [lattice guide](examples/phi4/README.md) for the model and sampling settings.
 
-## Quick Start
+### Alanine dipeptide
 
-### Double-Well Notebook
+A prior trained on an isolated alanine dipeptide is coupled to explicit molecular interactions. Sodium coordination draws the carbonyl oxygens together; two copies of the monomer prior form a dimer with anti-parallel and parallel hydrogen-bonded structures.
 
-`notebooks/example_doublewell.ipynb` is the smallest quick run in the repository. It loads a pretrained one-dimensional diffusion prior, constructs the annealed GG-PA context, and compares direct diffusion, single-`t` GG-PA, and replica-exchange GG-PA on the coupled double-well system.
+![Alanine with sodium and the alanine dimer, compared with molecular dynamics](assets/figures/alanine.png)
 
-### $\phi^4$ Notebook
-
-`notebooks/example_phi4.ipynb` provides a small two-dimensional lattice quick run. It includes:
-
-- an `L=32` snapshot demonstration at several couplings `J`
-- a fast `L=8` sweep showing how `<|m|>` and `\chi` vary with `J`
-
-Both notebooks are meant to be runnable directly from the repository with the checkpoints already stored under `checkpoints/`.
-
-### $\phi^4$ Replica-Exchange Script
-
-For the heavier `L=32` paper-facing Ginzburg-Landau phi^4 scans, use the dedicated folder in `examples/` instead of the notebook:
+**Figure 5. Molecular contexts.** (a) Carbonyl O–O distance with $Na^+$, comparing GG-PA, direct diffusion and MD. (b) Dimer torsion differences from GG-PA-RE and MD, separated by topology. Insets show sampled structures.
 
 ```bash
-bash examples/phi4/run_phase_transition.sh
-bash examples/phi4/run_critical_scaling.sh
-python examples/phi4/plot_phi4_results.py all
+python examples/alanine/example_alanine.py --config examples/alanine/settings.yaml
 ```
 
-The two shell scripts launch the zero-field phase-transition scan and the nonzero-field critical-scaling scan in the background. Both workflows use the shared YAML config at `configs/phi4_example.yaml`, and raw outputs are written under `examples/phi4/results/`. The plotting script then loads those raw files and produces the phase-transition and data-collapse figures. The shell launchers use the current shell environment by default; set `GGPA_CONDA_ENV=<env>` to force `conda run -n <env>`.
+Allow about 10–15 minutes. See the [alanine guide](examples/alanine/README.md) for the molecular setup and sampling settings.
 
-The script defaults match the SI description for the paper-facing Ginzburg-Landau phi^4 runs:
-`10_000` sweeps per point, magnetization recorded every sweep, `30%` burn-in,
-and a `48`-replica ladder between `t=0.1` and `t=0.6`. The raw outputs also
-store the per-replica magnetization histories together with the final
-per-replica `(phi, psi)` fields.
+The [manual](docs/manual.md) covers the Python API and custom priors, projections and contexts.
 
-### Alanine Dipeptide Scripts
+### Paper settings
 
-The alanine-dipeptide examples in `examples/alanine_dipeptide/` expose the
-shared torsion-diffusion prior used for two explicit MD systems:
-
-```bash
-python examples/alanine_dipeptide/run_ad_sodium.py
-python examples/alanine_dipeptide/plot_alanine_results.py ad-sodium
-python examples/alanine_dipeptide/run_ad_dimer.py
-python examples/alanine_dipeptide/plot_alanine_results.py ad-dimer
-```
-
-The same workflows can be launched in the background with:
-
-```bash
-bash examples/alanine_dipeptide/run_ad_sodium.sh
-bash examples/alanine_dipeptide/run_ad_dimer.sh
-```
-
-Both workflows read from `configs/alanine_dipeptide_example.yaml`. The
-AD-Na+ example is a zero-shot transfer run built around the bundled
-`0%` torsion prior: `5` trajectories, `5000` GG-PA steps each, `20%` burn-in,
-and saved DCD files with one frame per GG-PA step. The dimer example remains a
-four-replica GG-PA-RE ladder with `t = [0.1, 0.15, 0.25, 0.4]`, `1000` outer
-blocks, saved replica DCD files, and two comparison figures
-(`|Δ\psi|` and `|Δ\phi|`). Outputs are written under
-`examples/alanine_dipeptide/results/`. The released alanine config defaults to
-`device: cpu` and `platform_name: CUDA`, which is the most robust setting on
-machines where OpenMM can use the GPU but the local PyTorch build is not yet
-matched to the installed accelerator. The shell launchers use
-the current shell environment by default; set `GGPA_CONDA_ENV=<env>` to force
-`conda run -n <env>`. On CPU-only machines, add `--platform CPU`.
-
-## Repository Layout
-
-```text
-.
-|-- checkpoints/          pretrained weights for the released notebooks
-|-- configs/              lightweight configuration files
-|-- data/                 compact topologies and processed references
-|-- notebooks/            quick-run demonstrations
-|-- examples/             heavier scripts for raw-data generation and figures
-`-- src/ggpa/             reusable GG-PA package code
-```
+The [`configs/`](configs/) folder provides system parameters and sampling settings for the paper's [$\phi^4$ lattice](configs/phi4.yaml) and [alanine](configs/alanine.yaml) experiments.
 
 ## Citation
 
-If this repository is useful in your work, please cite the paper:
+If you use GG-PA in your research, please cite the accompanying paper.
 
 ```bibtex
-@misc{wang2026composingdiffusionpriorsexplicit,
-      title={Composing diffusion priors with explicit physical context via generative Gibbs sampling},
-      author={Weizhou Wang and Jonathan Weare and Aaron R. Dinner},
-      year={2026},
-      eprint={2605.10642},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG},
-      url={https://arxiv.org/abs/2605.10642},
+@inproceedings{wang2026ggpa,
+  title = {Composing Diffusion Priors with Explicit Physical Context via Generative Gibbs Sampling},
+  author = {Wang, Weizhou and Weare, Jonathan and Dinner, Aaron R.},
+  booktitle = {Advances in Neural Information Processing Systems},
+  year = {2026},
+  eprint = {2605.10642},
+  archivePrefix = {arXiv}
 }
 ```
 
-The repository also includes software citation metadata in [CITATION.cff](CITATION.cff), with the arXiv paper set as the preferred citation.
-
 ## License
 
-This project is released under the MIT License. See [LICENSE](LICENSE).
+GG-PA is distributed under the [MIT License](LICENSE).

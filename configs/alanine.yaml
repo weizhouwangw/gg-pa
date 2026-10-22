@@ -1,0 +1,26 @@
+# Reference settings for Fig. 3; run with examples/alanine/example_alanine.py --config configs/alanine.yaml
+workers: 8
+burn_in: 0.2
+
+common:
+  seed: 7
+  device: cpu
+  precision: {autocast: null, tf32: false, compile: false}
+  trajectories: 5
+  sweeps: 5000
+  dt_ps: 0.002
+  torus_steps: 200
+  platform: Reference
+  properties: {}
+  minimize: true
+
+sodium:
+  checkpoints: {0: checkpoints/ad_torsion_prior.pt}
+  pdb: data/adp_monomer_vacuum.pdb
+  direct_samples: 20000
+
+dimer:
+  checkpoint: checkpoints/ad_torsion_prior.pt
+  pdb: data/adp_dimer_vacuum.pdb
+  ladder: [0.1, 0.15, 0.25, 0.4, 0.8]
+  t: []

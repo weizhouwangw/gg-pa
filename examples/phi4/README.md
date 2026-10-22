@@ -1,31 +1,41 @@
-# Ginzburg-Landau Phi^4 Example
+# Composing a $\phi^4$ lattice
 
-This directory contains the heavier paper-facing Ginzburg-Landau phi^4 reproduction workflow.
+An isolated-site prior, $p_0(\phi)\propto e^{-(\phi^2-1)^2}$, is composed through periodic nearest-neighbor interactions:
 
-Main entry points:
+$$
+H(\phi)=\sum_i(\phi_i^2-1)^2+J\sum_{\langle ij\rangle}(\phi_i-\phi_j)^2-h\sum_i\phi_i,
+\qquad p(\phi)\propto e^{-H(\phi)}.
+$$
 
-- `phi4_re_scan.py`
-  - `phase-transition`: zero-field replica-exchange scan across `J`
-  - `critical-scaling`: nonzero-field scaling-window scan across `(h, J)`
-- `plot_phi4_results.py`
-  - `phase-transition`: plot the zero-field phase-transition figure from `re_scan.npz`
-  - `critical-scaling`: plot the data-collapse figure from `cs_h..._g....npz` or `critical_scaling_summary.npz`
-  - `all`: produce both figures
-- `run_phase_transition.sh`
-  - launch the zero-field scan in the background
-- `run_critical_scaling.sh`
-  - launch the critical-scaling scan in the background
-  - both shell launchers forward any extra CLI flags to `phi4_re_scan.py`, e.g. `--compile-model`
-  - both shell launchers use the current shell environment by default; set `GGPA_CONDA_ENV=<env>` to force `conda run -n <env>`
+The example compares fields and absolute magnetization $|m|$ with checkerboard Metropolis at three couplings across the transition.
 
-Default parameters live in `configs/phi4_example.yaml`.
+## How it works
 
-The paper denotes the lattice coupling by `J`. Some saved arrays, filenames,
-and config keys retain the legacy name `gamma` for compatibility with earlier
-run outputs; in this example, read `gamma` as `J`.
+Every site carries a copy of $p_0$, coupled to an auxiliary field $\psi$ by $q_t(\psi_i\mid\phi_i)=\mathcal{N}(\psi_i;\alpha_t\phi_i,\sigma_t^2)$. The quadratic coupling $J\sum_{\langle ij\rangle}(\phi_i-\phi_j)^2$ is diagonal in Fourier space (lattice Laplacian eigenvalues $\lambda_k$) and is deconvolved mode by mode:
 
-By default, raw outputs are written under:
+$$
+q_{\mathrm{ctx}}(\psi;t)\propto\exp\Big[-\tfrac12\sum_k q_k(t)\,|\hat\psi_k|^2+\frac{h}{\alpha_t}\sum_i\psi_i\Big],\qquad q_k(t)=\frac{2J\lambda_k}{\alpha_t^2-2J\lambda_k\sigma_t^2}.
+$$
 
-- `examples/phi4/results/phase_transition`
-- `examples/phi4/results/critical_scaling`
-- `examples/phi4/results/figures`
+A sweep denoises every site independently, $\phi_i\sim p_0(\phi_i)\,q_t(\psi_i\mid\phi_i)$, then draws $\psi$ exactly, mode by mode, from $q_{\mathrm{ctx}}(\psi;t)\prod_i q_t(\psi_i\mid\phi_i)$.
+
+**Replica exchange.** Replicas at $t_1<\dots<t_R$ share the context fixed at $t_1$. Neighbours swap with probability
+
+$$
+\min\Big(1,\frac{q_{t_{r+1}}(\psi^{(r)}\mid\phi^{(r)})\,q_{t_r}(\psi^{(r+1)}\mid\phi^{(r+1)})}{q_{t_r}(\psi^{(r)}\mid\phi^{(r)})\,q_{t_{r+1}}(\psi^{(r+1)}\mid\phi^{(r+1)})}\Big),
+$$
+
+where the priors and the shared context cancel. Noisier replicas see a weaker effective coupling and cross the transition quickly.
+
+## Run
+
+With CUDA-enabled PyTorch, run from the repository root:
+
+```bash
+python -m pip install ".[figures]"
+python examples/phi4/example_phi4.py --config examples/phi4/settings.yaml
+```
+
+Allow about 15 minutes. Settings are in [settings.yaml](settings.yaml); outputs go to `runs/phi4_<timestamp>/`.
+
+See the [root README](../../README.md) for the figure and [configs/phi4.yaml](../../configs/phi4.yaml) for the paper settings.

@@ -1,0 +1,26 @@
+# AD-Na+ (Fig. 3a) and the AD dimer (Fig. 3b-c) with the paper's settings, on the CPU.
+workers: 8                          # processes, one trajectory each
+burn_in: 0.2                        # fraction of each trajectory discarded before analysis
+
+common:                             # fields shared by the sodium and dimer runs
+  seed: 7
+  device: cpu
+  precision: {autocast: null, tf32: false, compile: false}
+  trajectories: 5
+  sweeps: 5000                      # one sweep: prior update, then 100 restrained MD steps
+  dt_ps: 0.002
+  torus_steps: 200                  # reverse-diffusion steps at t = 1
+  platform: Reference               # OpenMM CPU platform; faster than CUDA for these small systems
+  properties: {}
+  minimize: true
+
+sodium:                             # one peptide and a Na+ ion, fixed t = 0.1
+  checkpoints: {0: checkpoints/ad_torsion_prior.pt}
+  pdb: data/adp_monomer_vacuum.pdb
+  direct_samples: 20000             # Direct Diffusion: prior draws from t = 1, no context
+
+dimer:                              # two peptides, two copies of the same prior
+  checkpoint: checkpoints/ad_torsion_prior.pt
+  pdb: data/adp_dimer_vacuum.pdb
+  ladder: [0.1, 0.15, 0.25, 0.4, 0.8]  # replica exchange in diffusion time; the first rung is analysed
+  t: []                             # optional fixed-t trajectories

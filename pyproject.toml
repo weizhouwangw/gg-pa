@@ -1,50 +1,29 @@
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "ggpa"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Generative Gibbs for Physics-Aware Sampling"
 readme = "README.md"
-requires-python = ">=3.11,<3.12"
-license = { file = "LICENSE" }
+license = "MIT"
 authors = [{ name = "Weizhou Wang" }]
-keywords = [
-  "diffusion models",
-  "sampling",
-  "replica exchange",
-  "statistical physics",
-  "mcmc",
-]
-classifiers = [
-  "Intended Audience :: Science/Research",
-  "License :: OSI Approved :: MIT License",
-  "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3 :: Only",
-  "Programming Language :: Python :: 3.11",
-  "Topic :: Scientific/Engineering :: Physics",
-]
+keywords = ["diffusion models", "sampling", "replica exchange", "statistical physics", "mcmc"]
+requires-python = ">=3.10"
 dependencies = [
-  "torch>=2.3,<2.8",
-  "numpy>=1.26,<2.0",
-  "PyYAML>=6.0.1,<7",
-  "ipykernel>=6.28,<8",
-  "jupyterlab>=4.0,<5",
-  "matplotlib>=3.8,<3.11",
-  "pymbar>=4.0.3,<5",
-  "seaborn>=0.13,<0.14",
-  "mdtraj>=1.10.3,<1.12",
-  "openmm>=8.3.1,<8.6",
+  "torch>=2.6",
+  "numpy>=1.26",
+  "PyYAML>=6",
 ]
 
-[tool.setuptools]
-package-dir = { "" = "src" }
+[project.optional-dependencies]
+md = ["openmm>=8.1", "mdtraj>=1.10"]
+figures = ["matplotlib>=3.8", "scipy>=1.10"]
 
 [tool.setuptools.packages.find]
-where = ["src"]
 include = ["ggpa*"]
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-python_files = ["test_*.py"]
+[tool.setuptools.dynamic]
+version = {attr = "ggpa.__version__"}
+

@@ -1,76 +1,16 @@
-# Python bytecode and extension artifacts
 __pycache__/
 *.py[cod]
-*$py.class
-*.so
-
-# Packaging
-*.egg
 *.egg-info/
 build/
 dist/
-sdist/
-pip-wheel-metadata/
-develop-eggs/
-eggs/
-parts/
-var/
-.installed.cfg
-.Python
-
-# Virtual environments
-.venv/
-venv/
-env/
-ENV/
-.venv*
-
-# Notebook and OS cruft
 .ipynb_checkpoints/
-*.ipynb_checkpoints
 .DS_Store
-Thumbs.db
-
-# Editors and local tooling
-.idea/
+# outputs of the quickstart and examples
+runs/
+# local agent and editor files
+AGENTS.md
+CLAUDE.md
+.claude/
+.codex/
 .vscode/
-*.swp
-*.swo
-*~
-.python-version
-
-# Logs and coverage
-*.log
-*.pid
-.coverage
-.coverage.*
-coverage.xml
-htmlcov/
-.pytest_cache/
-.hypothesis/
-.tox/
-.nox/
-
-# Tool caches
-.cache/
-.mypy_cache/
-.ruff_cache/
-.pyre/
-wandb/
-outputs/
-multirun/
-
-# Project-local generated or private content
-/archives/
-/checkpoints/archive/
-/configs/archive/
-/exps/
-/updated_exps/
-/manuscript/
-/results/
-/figs/
-/examples/phi4/logs/
-/examples/phi4/results/
-/examples/alanine_dipeptide/logs/
-/examples/alanine_dipeptide/results/
-/docs/
+.idea/

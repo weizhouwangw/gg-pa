@@ -1,0 +1,23 @@
+seed: 7
+device: cuda
+threads: 1
+L: 16
+chains: 32
+J: [0.2, 0.44, 0.7]
+h: [0.0]
+burn_in: 0.5
+
+sample:
+  checkpoint: checkpoints/phi4_prior.pt
+  precision: {autocast: null, tf32: false, compile: true}
+  t_prod: 0.1
+  t_top: 0.1
+  rungs: 1
+  sweeps: 3000
+
+reference:
+  seed: 107
+  device: cpu
+  equilibration: 10000
+  measurement: 30000
+  delta: 0.5
