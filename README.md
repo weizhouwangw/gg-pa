@@ -8,9 +8,9 @@ This repository contains the companion package for
 >
 > [Read the paper](https://arxiv.org/abs/2605.10642)
 
-![GG-PA couples component priors to projections of a shared system with explicit physical context](assets/overview.png)
+![Animation: a frozen double-well diffusion model alone samples its two wells 50:50; coupled to an environment through GG-PA, the same model samples the exact 18:82 split](assets/animations/ggpa-readme-compare-hd.gif)
 
-**Figure 1. GG-PA composition.** Component priors act on projections of a shared system; the physical context also governs degrees of freedom outside the priors. Blue arrows show parallel denoising, and dashed amber arrows show context-aware aggregation. The two updates form a Gibbs sweep.
+**Figure 1. A frozen prior in an environment.** On its own (top), a diffusion model trained on a symmetric double well reproduces its training distribution. GG-PA couples the same frozen model to an environment (bottom). Each sweep aggregates the system state under the coupling, then denoises it with the model. The clean coordinate reaches the exact split of the coupled system, about 18:82.
 
 GG-PA is an **inference-time composition framework** that combines pretrained diffusion priors with explicit physical context to sample a joint system without retraining. It supports three settings:
 
@@ -20,7 +20,7 @@ GG-PA is an **inference-time composition framework** that combines pretrained di
 
 - **Composition with general physical environments.** Combine learned component priors with explicit interactions, including nonquadratic molecular forces.
 
-The repository includes three pretrained checkpoints, two CPU quickstarts with analytic references, $\phi^4$ lattice and alanine examples, and configurations for the paper applications.
+The repository includes three pretrained checkpoints, two CPU quickstarts with analytic references, $\phi^4$ lattice and alanine examples with notebooks that train their priors, and configurations for the paper applications.
 
 ## Quick start
 
@@ -56,7 +56,7 @@ In this range the corrected covariance is positive definite and the posterior is
 
 ### 2. Couple a pretrained diffusion model to an environment
 
-A diffusion model trained on an isolated, symmetric double well (Figure 3a) is coupled to a harmonic environment that favors the right well. GG-PA recovers the shifted distribution without retraining, using the same finite-noise correction as the inverse problem; direct diffusion still samples the isolated system. GG-PA-RE adds replica exchange over diffusion time.
+A diffusion model trained on an isolated, symmetric double well (Figure 3a) is coupled to a harmonic environment that favors the right well. GG-PA recovers the shifted distribution without retraining, using the same finite-noise correction as the inverse problem; direct diffusion still samples the isolated system. GG-PA-RE adds [replica exchange over diffusion time](#replica-exchange-over-diffusion-time).
 
 ![Double-well quickstart: training potential, coupled energy surface and clean-coordinate marginal](assets/figures/doublewell.png)
 
@@ -96,7 +96,7 @@ A single-site double-well prior is reused across a $16\times16$ lattice. Changin
 python examples/phi4/example_phi4.py --config examples/phi4/settings.yaml
 ```
 
-Allow about 15 minutes. See the [lattice guide](examples/phi4/README.md) for the model and sampling settings.
+Allow about 15 minutes. See the [lattice guide](examples/phi4/README.md) for the model and sampling settings. To train the prior yourself and run this example with it, use [train_and_sample.ipynb](examples/phi4/train_and_sample.ipynb).
 
 ### Alanine dipeptide
 
@@ -110,9 +110,17 @@ A prior trained on an isolated alanine dipeptide is coupled to explicit molecula
 python examples/alanine/example_alanine.py --config examples/alanine/settings.yaml
 ```
 
-Allow about 10–15 minutes. See the [alanine guide](examples/alanine/README.md) for the molecular setup and sampling settings.
+Allow about 10–15 minutes. See the [alanine guide](examples/alanine/README.md) for the molecular setup and sampling settings. To train the torsion prior yourself and run this example with it, use [train_and_sample.ipynb](examples/alanine/train_and_sample.ipynb).
 
 The [manual](docs/manual.md) covers the Python API and custom priors, projections and contexts.
+
+### Replica exchange over diffusion time
+
+GG-PA-RE runs the same composition at a ladder of diffusion times $t_1 < t_2 < \dots < t_R$ and swaps states between neighboring replicas. Replicas at larger $t$ move between configurations more easily. Samples come from the replica at $t_1$, which keeps the accuracy of the smallest diffusion time. The alanine dimer example uses it (Figure 6).
+
+![Replica exchange over diffusion time for the alanine dimer: each replica aggregates two monomer priors into the dimer, and neighboring replicas swap](assets/replica_exchange.png)
+
+**Figure 6. GG-PA-RE for the alanine dimer.** Each replica $z^{(r)}$ runs a Gibbs sweep at diffusion time $t_r$. Aggregation (red) updates the dimer under the molecular interactions; the two monomer priors denoise their copies (blue). Green dashes mark hydrogen bonds. Neighboring replicas swap states.
 
 ### Paper settings
 

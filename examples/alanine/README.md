@@ -33,4 +33,15 @@ python examples/alanine/example_alanine.py --config examples/alanine/settings.ya
 
 Allow about 10–15 minutes. Settings are in [settings.yaml](settings.yaml); outputs go to `runs/alanine_<timestamp>/`.
 
+## Train and sample
+
+[train_and_sample.ipynb](train_and_sample.ipynb) trains the torsion prior from the vacuum MD torsions and runs this example with it. From the repository root:
+
+```bash
+python -m pip install ".[md,figures]" jupyter
+jupyter nbconvert --to notebook --execute --inplace examples/alanine/train_and_sample.ipynb
+```
+
+Allow about 5 minutes on CPU; outputs go to `runs/alanine_notebook_<timestamp>/`.
+
 See the [root README](../../README.md) for the figure and [configs/alanine.yaml](../../configs/alanine.yaml) for the paper settings.

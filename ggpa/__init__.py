@@ -4,4 +4,4 @@ from .conventions import Prior
 from .sampler import GibbsSampler, compose
 
 __all__ = ["GibbsSampler", "Prior", "compose"]
-__version__ = "2.0.0"
+__version__ = "2.0.1"

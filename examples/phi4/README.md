@@ -38,4 +38,15 @@ python examples/phi4/example_phi4.py --config examples/phi4/settings.yaml
 
 Allow about 15 minutes. Settings are in [settings.yaml](settings.yaml); outputs go to `runs/phi4_<timestamp>/`.
 
+## Train and sample
+
+[train_and_sample.ipynb](train_and_sample.ipynb) trains the single-site prior from exact samples of $p_0$ and runs this example with it. From the repository root:
+
+```bash
+python -m pip install ".[figures]" jupyter
+jupyter nbconvert --to notebook --execute --inplace examples/phi4/train_and_sample.ipynb
+```
+
+Allow about 20 minutes; outputs go to `runs/phi4_notebook_<timestamp>/`.
+
 See the [root README](../../README.md) for the figure and [configs/phi4.yaml](../../configs/phi4.yaml) for the paper settings.
