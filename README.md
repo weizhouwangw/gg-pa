@@ -32,6 +32,8 @@ bash quickstart.sh
 
 No installation is needed. Both run on CPU in about five minutes and save results to `runs/quickstart_<timestamp>/`; settings are in the [quickstart guide](quickstart/README.md).
 
+To run them in the browser without a local setup, open the [Colab notebook](https://colab.research.google.com/github/weizhouwangw/GG-PA/blob/main/quickstart/colab.ipynb).
+
 ### 1. Solve a linear inverse problem without split bias
 
 For $y=Hx+\eta$ with Gaussian noise covariance $\Sigma_\eta$, split Gibbs with split noise $\rho$ inflates the observation covariance to $\Sigma_\eta+\rho^2HH^T$ and **samples the wrong posterior, even after convergence**.
