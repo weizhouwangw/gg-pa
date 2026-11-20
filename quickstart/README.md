@@ -6,7 +6,7 @@ bash quickstart.sh
 
 Requires Python 3.10+ with PyTorch, NumPy, SciPy, Matplotlib and PyYAML; no installation. Both examples take about five minutes on CPU and write `manifest.json`, `results/` and `figures/` to `runs/quickstart_<timestamp>/`.
 
-The same run is available in the browser as a [Colab notebook](https://colab.research.google.com/github/weizhouwangw/GG-PA/blob/main/quickstart/colab.ipynb), which clones the repository, runs `quickstart.sh` and shows the two figures.
+The same run is available in the browser as a [Colab notebook](https://colab.research.google.com/github/weizhouwangw/GG-PA/blob/main/quickstart/colab.ipynb), which clones the repository, runs `quickstart.sh` and shows the two figures. Allow about 30 minutes on Colab's free CPU.
 
 ## How it works
 
